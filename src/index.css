@@ -11,3 +11,17 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.button{
+  width:25px;
+  height:25px;
+  
+}
+
+.default{
+  background-image: url("../public/resource/images/default.png");
+}
+
+.zero{
+  background-image: url("../public/resource/images/zero.png");
+}
