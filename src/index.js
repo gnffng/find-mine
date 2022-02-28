@@ -6,6 +6,8 @@ class Game extends React.Component{
   constructor(props){
     super(props);
     this.state = {
+      isPlaying : true,
+      isInit : true,
       level : 1,
       board_width:10,
       board_height:8,
@@ -13,7 +15,7 @@ class Game extends React.Component{
     };
   }
 
-  changeLevel = () => {
+  ChangeLevel = () => {
     let selectLevel = document.getElementById("selectLevel");
     let newLevel = selectLevel.options[selectLevel.selectedIndex].value*1;
     this.setState({level : newLevel});
@@ -31,13 +33,37 @@ class Game extends React.Component{
       default:
         break;
     }
+
+    this.Init();
+  }
+
+  Init = () => {
+    this.setState({isPlaying : false});
+    this.setState({isInit : false});
+  }
+
+  ReStart = () => {
+    this.setState({isPlaying : true});
+    this.setState({isInit : true});
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    if(this.state.isPlaying !== nextState.isPlaying){
+      return true;
+    }
+    
+    if(this.state.level !== nextState.level){
+      return true;
+    }
+
+    return false;
   }
 
   render(){
     return(
       <div id="Game">
-        <Header level={this.state.level} count_mine={this.state.count_mine} changeLevel={this.changeLevel}/>
-        <GameBoard width={this.state.board_width} height={this.state.board_height} count_mine={this.state.count_mine}/>
+        <Header level={this.state.level} count_mine={this.state.count_mine} changeLevel={this.ChangeLevel}/>
+        <GameBoard init={this.Init} reStart={this.ReStart} isInit={this.state.isInit} isPlaying={this.state.isPlaying} width={this.state.board_width} height={this.state.board_height} count_mine={this.state.count_mine}/>
       </div>
       
     );
@@ -91,13 +117,15 @@ class GameBoard extends React.Component{
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.count_mine !== prevProps.count_mine) {
+    if (this.props.count_mine !== prevProps.count_mine || !this.props.isPlaying) {
       let mines = this.getMines(this.props.count_mine, this.props.width, this.props.height);
       let _blocks = this.getBlocks(mines, this.props.count_mine, this.props.width, this.props.height);
 
       this.setState({
         blocks : _blocks
       });
+
+      this.props.reStart();
     }
   }
 
@@ -111,7 +139,7 @@ class GameBoard extends React.Component{
                 {
                   row.map(
                     (value) => (
-                      <Block number={value} />
+                      <Block init={this.props.init} number={value} isInit={this.props.isInit}/>
                     )
                   )
                 }
@@ -128,7 +156,7 @@ class GameBoard extends React.Component{
     let count_block = width * height;
     while(count_mine>0){
       let randomNumber = Math.floor(Math.random()*(count_block));
-      if(mines.indexOf(randomNumber) == -1){
+      if(mines.indexOf(randomNumber) === -1){
         mines.push(randomNumber);
         count_mine--;
       }
@@ -185,11 +213,58 @@ class Block extends React.Component{
     this.state = {
       isClick : false,
       isFlag : false,
+      isInit : false
     };
   }
 
+  componentDidUpdate(prevProps) {
+    if (!prevProps.isInit) {
+      this.setState({
+        isClick : false,
+        isFlag : false,
+        isInit : false
+      })
+    }
+  }
+
   render(){
-    return <button className="button default" onClick={() => this.pressBlock(this.state.isFlag, this.state.isClick, this.props.number)}>{this.props.number}</button>
+    return <button value={this.props.number} className={"button "+this.WhatClass(this.state.isClick, this.state.isFlag, this.props.number)} onClick={() => this.pressBlock(this.state.isFlag, this.state.isClick, this.props.number)}>{this.props.number}</button>
+  }
+
+  WhatClass(isClick, isFlag, number){
+    if(isFlag){
+      return "flag";
+    }
+    else if(!isClick){
+      return "default";
+    }
+    else if(number===0){
+      return "zero";
+    }
+    else if(number===1){
+      return "one";
+    }
+    else if(number===2){
+      return "two";
+    }
+    else if(number===3){
+      return "three";
+    }
+    else if(number===4){
+      return "four";
+    }
+    else if(number===5){
+      return "five";
+    }
+    else if(number===6){
+      return "six";
+    }
+    else if(number===7){
+      return "seven";
+    }
+    else if(number===8){
+      return "eight";
+    }
   }
 
   pressBlock(isFlag, isClick, number){
@@ -197,7 +272,8 @@ class Block extends React.Component{
       return;
     }
     else if(number === -1){
-      this.loseGame();
+      alert("Lose Game");
+      this.props.init();
       return;
     }
     else{
@@ -205,10 +281,6 @@ class Block extends React.Component{
       console.log(number);
       return;
     }
-  }
-
-  loseGame(){
-    console.log("게임에서 패배했습니다.");
   }
 }
 
