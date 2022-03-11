@@ -23,6 +23,11 @@ code {
   background-size : 100%;
 }
 
+.flag{
+  background-image: url("../public/resource/images/flag.png");
+  background-size : 100%;
+}
+
 .zero{
   background-image: url("../public/resource/images/zero.png");
   background-size : 100%;

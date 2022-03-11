@@ -11,16 +11,90 @@ class Game extends React.Component{
   constructor(props){
     super(props);
     this.state = {
-      level : 1
+      isRestart : false,
+      level : 1,
+      left_flag : 10,
+      blocks : this.GetBlocks(1)
     };
+
+    this.ChangeLevel = this.ChangeLevel.bind(this);
+    this.Lose = this.Lose.bind(this);
+    this.Restart = this.Restart.bind(this);
+    this.IncFlagCount = this.IncFlagCount.bind(this);
+    this.DescFlagCount = this.DescFlagCount.bind(this);
   }
 
   render(){
+    return(
+      <div id="Game">
+        <Header
+          isRestart = {this.state.isRestart} 
+          left_flag = {this.state.left_flag} 
+          level = {this.state.level} 
+          ChangeLevel = {this.ChangeLevel} 
+          Restart = {this.Restart}/>
+        <GameBoard 
+          isRestart = {this.state.isRestart} 
+          left_flag = {this.state.left_flag} 
+          blocks = {this.state.blocks} 
+          Lose = {this.Lose} 
+          Restart = {this.Restart}
+          IncFlagCount = {this.IncFlagCount}
+          DescFlagCount = {this.DescFlagCount}/>
+      </div>
+    );
+  }
+
+  //isRestart 조건 추가 필요
+  componentDidUpdate(prevProps, prevState){
+    if(this.state.isRestart || prevState.level != this.state.level){
+      this.setState({
+        left_flag : (this.state.level===1) ? this.CountMineEnum.LV1 : (this.state.level===2) ? this.CountMineEnum.LV2 : this.CountMineEnum.LV3,
+        blocks : this.GetBlocks(this.state.level)
+      });
+    }
+  }
+
+  ChangeLevel(){
+    let selectLevel = document.getElementById("selectLevel");
+    let newLevel = selectLevel.options[selectLevel.selectedIndex].value * 1;
+    this.setState({
+      level : newLevel,
+      isRestart : true
+    });
+  }
+
+  Lose(){
+    alert("패배했습니다.");
+    this.setState({
+      isRestart : true
+    });
+  }
+
+  Restart(){
+    this.setState({
+      isRestart : false
+    })
+  }
+
+  IncFlagCount(){
+    this.setState({
+      left_flag : this.state.left_flag+1
+    })
+  }
+
+  DescFlagCount(){
+    this.setState({
+      left_flag : this.state.left_flag-1
+    })
+  }
+
+  GetBlocks(level){
     let count_mine = 0;
     let width = 0;
     let height = 0;
 
-    switch(this.state.level){
+    switch(level){
       case 1 :
         count_mine = this.CountMineEnum.LV1;
         width = this.GameBoardWidthEnum.LV1;
@@ -38,27 +112,6 @@ class Game extends React.Component{
         break;
     }
 
-    const blocks = this.getBlocks(count_mine, width, height);
-    return(
-      <div id="Game">
-        <Header level={this.state.level} ChangeLevel={this.ChangeLevel} />
-        <GameBoard blocks={blocks} Lose={this.Lose} />
-      </div>
-    );
-  }
-
-  ChangeLevel(){
-    let selectLevel = document.getElementById("selectLevel");
-    let newLevel = selectLevel.options[selectLevel.selectedIndex].value * 1;
-    this.setState({level : newLevel});
-  }
-
-  Lose(){
-    alert("패배했습니다.");
-    this.render();
-  }
-
-  getBlocks(count_mine, width, height){
     let mines = this.getMines(count_mine, width, height);
     let blocks = [];
 
@@ -120,14 +173,13 @@ class Header extends React.Component{
   constructor(props){
     super(props);
     this.state = {
-      left_flag : 10
     };
   }
 
   render(){
     return <div id="header">
       <SelectLevel ChangeLevel={this.props.ChangeLevel} />
-        <img src="resource/images/flag_icon.png" />{this.state.left_flag}
+        <img src="resource/images/flag_icon.png" />{this.props.left_flag}
         <img src="resource/images/clock_icon.png" />
     </div>
   }
@@ -166,7 +218,14 @@ class GameBoard extends React.Component{
                 {
                   row.map(
                     (value) => (
-                      <Block number={value} Lose={this.props.Lose}/>
+                      <Block 
+                        isRestart={this.props.isRestart} 
+                        left_flag={this.props.left_flag}
+                        number={value} 
+                        Lose={this.props.Lose} 
+                        Restart={this.props.Restart}
+                        IncFlagCount={this.props.IncFlagCount}
+                        DescFlagCount={this.props.DescFlagCount} />
                     )
                   )
                 }
@@ -177,6 +236,12 @@ class GameBoard extends React.Component{
       </div>
     )
   }
+
+  componentDidUpdate(){
+    if(this.props.isRestart){
+      this.props.Restart();
+    }
+  }
 }
 
 class Block extends React.Component{
@@ -186,10 +251,27 @@ class Block extends React.Component{
       isClick : false,
       isFlag : false
     };
+
+    this.RightClick = this.RightClick.bind(this);
   }
 
   render(){
-    return <button value={this.props.number} className={"button "+this.WhatClass(this.state.isClick, this.state.isFlag, this.props.number)} onClick={() => this.pressBlock(this.state.isFlag, this.state.isClick, this.props.number)}>{this.props.number}</button>
+    return  <button
+                value = {this.props.number}
+                className = {"button "+this.WhatClass(this.state.isClick, this.state.isFlag, this.props.number)} 
+                onClick = {() => this.PressBlock(this.state.isFlag, this.state.isClick, this.props.number)}
+                onContextMenu = {this.RightClick}>
+              {this.props.number}
+            </button>
+  }
+
+  componentDidUpdate(preProps){
+    if(!this.props.isRestart && preProps.isRestart){
+      this.setState({
+        isClick : false,
+        isFlag : false
+      });
+    }
   }
 
   WhatClass(isClick, isFlag, number){
@@ -228,12 +310,11 @@ class Block extends React.Component{
     }
   }
 
-  pressBlock(isFlag, isClick, number){
+  PressBlock(isFlag, isClick, number){
     if(isFlag || isClick){
       return;
     }
     else if(number === -1){
-      alert("Lose Game");
       this.props.Lose();
       return;
     }
@@ -243,6 +324,21 @@ class Block extends React.Component{
       return;
     }
   }
+
+  RightClick(e){
+    e.preventDefault();
+
+    if(this.props.left_flag > 0 && !this.state.isFlag){
+      this.setState({isFlag : true});
+      this.props.DescFlagCount();
+    }
+    else if(this.state.isFlag){
+      this.setState({isFlag : false});
+      this.props.IncFlagCount();
+    }
+    
+  }
+
 }
 
 ReactDOM.render(
