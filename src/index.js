@@ -13,11 +13,13 @@ class Game extends React.Component{
     this.state = {
       isRestart : false,
       level : 1,
-      left_flag : 10,
+      left_flag : this.CountMineEnum.LV1,
+      left_block : this.GameBoardWidthEnum.LV1*this.GameBoardHeightEnum.LV1-this.CountMineEnum.LV1,
       blocks : this.GetBlocks(1)
     };
 
     this.ChangeLevel = this.ChangeLevel.bind(this);
+    this.DescBlock = this.DescBlock.bind(this);
     this.Lose = this.Lose.bind(this);
     this.Restart = this.Restart.bind(this);
     this.IncFlagCount = this.IncFlagCount.bind(this);
@@ -31,37 +33,31 @@ class Game extends React.Component{
           isRestart = {this.state.isRestart} 
           left_flag = {this.state.left_flag} 
           level = {this.state.level} 
-          ChangeLevel = {this.ChangeLevel} 
-          Restart = {this.Restart}/>
+          Restart = {this.Restart}
+          ChangeLevel = {this.ChangeLevel}/>
         <GameBoard 
           isRestart = {this.state.isRestart} 
           left_flag = {this.state.left_flag} 
-          blocks = {this.state.blocks} 
+          blocks = {this.state.blocks}
           Lose = {this.Lose} 
           Restart = {this.Restart}
+          DescBlock = {this.DescBlock}
           IncFlagCount = {this.IncFlagCount}
           DescFlagCount = {this.DescFlagCount}/>
       </div>
     );
   }
 
-  //isRestart 조건 추가 필요
   componentDidUpdate(prevProps, prevState){
-    if(this.state.isRestart || prevState.level != this.state.level){
+    if(this.state.isRestart || prevState.level != this.state.level || this.state.left_block===0){
       this.setState({
         left_flag : (this.state.level===1) ? this.CountMineEnum.LV1 : (this.state.level===2) ? this.CountMineEnum.LV2 : this.CountMineEnum.LV3,
+        left_block : (this.state.level===1) ? this.GameBoardWidthEnum.LV1*this.GameBoardHeightEnum.LV1-this.CountMineEnum.LV1 :
+                     (this.state.level===2) ? this.GameBoardWidthEnum.LV2*this.GameBoardHeightEnum.LV2-this.CountMineEnum.LV2 : 
+                                              this.GameBoardWidthEnum.LV3*this.GameBoardHeightEnum.LV3-this.CountMineEnum.LV3,
         blocks : this.GetBlocks(this.state.level)
       });
     }
-  }
-
-  ChangeLevel(){
-    let selectLevel = document.getElementById("selectLevel");
-    let newLevel = selectLevel.options[selectLevel.selectedIndex].value * 1;
-    this.setState({
-      level : newLevel,
-      isRestart : true
-    });
   }
 
   Lose(){
@@ -74,6 +70,21 @@ class Game extends React.Component{
   Restart(){
     this.setState({
       isRestart : false
+    })
+  }
+
+  ChangeLevel(){
+    let selectLevel = document.getElementById("selectLevel");
+    let newLevel = selectLevel.options[selectLevel.selectedIndex].value * 1;
+    this.setState({
+      level : newLevel,
+      isRestart : true
+    });
+  }
+
+  DescBlock(){
+    this.setState({
+      left_block : this.state.left_block-1
     })
   }
 
@@ -209,6 +220,7 @@ class GameBoard extends React.Component{
   }
 
   render(){
+    var id = 1;
     return (
       <div id="gameBoard">
         {
@@ -219,11 +231,13 @@ class GameBoard extends React.Component{
                   row.map(
                     (value) => (
                       <Block 
+                        id={id++}
                         isRestart={this.props.isRestart} 
                         left_flag={this.props.left_flag}
                         number={value} 
                         Lose={this.props.Lose} 
                         Restart={this.props.Restart}
+                        DescBlock={this.props.DescBlock}
                         IncFlagCount={this.props.IncFlagCount}
                         DescFlagCount={this.props.DescFlagCount} />
                     )
@@ -320,6 +334,7 @@ class Block extends React.Component{
     }
     else{
       this.setState({isClick : true});
+      this.props.DescBlock();
       console.log(number);
       return;
     }
