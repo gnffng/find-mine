@@ -4,6 +4,9 @@ import './index.css';
 
 class Game extends React.Component{
 
+  BlockStateEnum = { NONECLICKED : "default", FLAG : "flag",
+                     EMPTY : "empty", ONE : "one", TWO : "two", THREE : "three", FOUR : "four", FIVE : "five", SIX : "six", SEVEN : "seven", EIGHT : "eight" };
+
   CountMineEnum = { LV1 : 10, LV2 : 40, LV3 : 99 };
   GameBoardWidthEnum = { LV1 : 10, LV2 : 18, LV3 : 24 };
   GameBoardHeightEnum = { LV1 : 8, LV2 : 14, LV3 : 20 };
@@ -11,69 +14,61 @@ class Game extends React.Component{
   constructor(props){
     super(props);
     this.state = {
-      isRestart : false,
       level : 1,
-      left_flag : this.CountMineEnum.LV1,
-      left_block : this.GameBoardWidthEnum.LV1*this.GameBoardHeightEnum.LV1-this.CountMineEnum.LV1,
-      blocks : this.GetBlocks(1)
+      leftFlagCount : this.CountMineEnum.LV1,
+      leftBlockCount : this.GameBoardWidthEnum.LV1 * this.GameBoardHeightEnum.LV1 - this.CountMineEnum.LV1,
+      blocks : this.getBlocks(1)
     };
 
-    this.ChangeLevel = this.ChangeLevel.bind(this);
-    this.DescBlock = this.DescBlock.bind(this);
-    this.Lose = this.Lose.bind(this);
-    this.Restart = this.Restart.bind(this);
-    this.IncFlagCount = this.IncFlagCount.bind(this);
-    this.DescFlagCount = this.DescFlagCount.bind(this);
+    this.changeLevel = this.changeLevel.bind(this);
+    this.leftClick = this.leftClick.bind(this);
+    this.rightClick = this.rightClick.bind(this);
+    this.lose = this.lose.bind(this);
   }
 
   render(){
     return(
       <div id="Game">
         <Header
-          isRestart = {this.state.isRestart} 
-          left_flag = {this.state.left_flag} 
-          level = {this.state.level} 
-          Restart = {this.Restart}
-          ChangeLevel = {this.ChangeLevel}/>
-        <GameBoard 
-          isRestart = {this.state.isRestart} 
-          left_flag = {this.state.left_flag} 
+          leftFlagCount = {this.state.leftFlagCount} 
+          level = {this.state.level}
+          changeLevel = {this.changeLevel}/>
+        <GameBoard
           blocks = {this.state.blocks}
-          Lose = {this.Lose} 
-          Restart = {this.Restart}
-          DescBlock = {this.DescBlock}
-          IncFlagCount = {this.IncFlagCount}
-          DescFlagCount = {this.DescFlagCount}/>
+          leftClick = {this.leftClick}
+          rightClick = {this.rightClick}/>
       </div>
     );
   }
 
   componentDidUpdate(prevProps, prevState){
-    if(this.state.isRestart || prevState.level != this.state.level || this.state.left_block===0){
-      this.setState({
-        left_flag : (this.state.level===1) ? this.CountMineEnum.LV1 : (this.state.level===2) ? this.CountMineEnum.LV2 : this.CountMineEnum.LV3,
-        left_block : (this.state.level===1) ? this.GameBoardWidthEnum.LV1*this.GameBoardHeightEnum.LV1-this.CountMineEnum.LV1 :
-                     (this.state.level===2) ? this.GameBoardWidthEnum.LV2*this.GameBoardHeightEnum.LV2-this.CountMineEnum.LV2 : 
-                                              this.GameBoardWidthEnum.LV3*this.GameBoardHeightEnum.LV3-this.CountMineEnum.LV3,
-        blocks : this.GetBlocks(this.state.level)
-      });
+    if(prevState.level != this.state.level || this.state.leftBlockCount===0 && prevState.leftBlockCount!==0){
+      switch(this.state.level){
+        case 1:
+          this.setState({ 
+            leftFlagCount : this.CountMineEnum.LV1,
+            leftBlockCount : this.GameBoardWidthEnum.LV1 * this.GameBoardHeightEnum.LV1 - this.CountMineEnum.LV1
+           });
+          break;
+        case 2:
+          this.setState({ 
+            leftFlagCount : this.CountMineEnum.LV2,
+            leftBlockCount : this.GameBoardWidthEnum.LV2 * this.GameBoardHeightEnum.LV2 - this.CountMineEnum.LV2
+           });
+          break;
+        case 3:
+          this.setState({ 
+            leftFlagCount : this.CountMineEnum.LV3,
+            leftBlockCount : this.GameBoardWidthEnum.LV3 * this.GameBoardHeightEnum.LV3 - this.CountMineEnum.LV3
+           });
+          break;
+      }
+      
+      this.setState({ blocks : this.getBlocks(this.state.level) });
     }
   }
 
-  Lose(){
-    alert("패배했습니다.");
-    this.setState({
-      isRestart : true
-    });
-  }
-
-  Restart(){
-    this.setState({
-      isRestart : false
-    })
-  }
-
-  ChangeLevel(){
+  changeLevel(){
     let selectLevel = document.getElementById("selectLevel");
     let newLevel = selectLevel.options[selectLevel.selectedIndex].value * 1;
     this.setState({
@@ -82,25 +77,7 @@ class Game extends React.Component{
     });
   }
 
-  DescBlock(){
-    this.setState({
-      left_block : this.state.left_block-1
-    })
-  }
-
-  IncFlagCount(){
-    this.setState({
-      left_flag : this.state.left_flag+1
-    })
-  }
-
-  DescFlagCount(){
-    this.setState({
-      left_flag : this.state.left_flag-1
-    })
-  }
-
-  GetBlocks(level){
+  getBlocks(level){
     let count_mine = 0;
     let width = 0;
     let height = 0;
@@ -129,18 +106,20 @@ class Game extends React.Component{
     for(let i=0; i<height; i++){
       let row = [];
       for(let j=0; j<width; j++){
-        row.push(0);
+        row.push(new Block(0, this.BlockStateEnum.NONECLICKED));
       }
       blocks.push(row);
     }
 
     for(let i=0; i<mines.length; i++){
-      blocks[Math.floor(mines[i]/width)][mines[i]%width] = -1;
+      var row = Math.floor(mines[i]/width);
+      var column = mines[i]%width;
+      blocks[row][column].setNumber(-1);
     }
 
     for(let i=0; i<height; i++){
       for(let j=0; j<width; j++){
-        blocks[i][j] = this.countAroundMine(blocks, height, width, i, j);
+        blocks[i][j].setNumber(this.countAroundMine(blocks, height, width, i, j));
       }
     }
 
@@ -162,14 +141,14 @@ class Game extends React.Component{
   }
   
   countAroundMine(blocks, height, width, nowI, nowJ){
-    if(blocks[nowI][nowJ]===-1){
+    if(blocks[nowI][nowJ].getNumber()===-1){
       return -1;
     }
   
     let count = 0;
     for(let i=Math.max(0,nowI-1); i<Math.min(height,nowI+2); i++){
       for(let j=Math.max(0,nowJ-1); j<Math.min(width,nowJ+2); j++){
-        if(blocks[i][j]===-1){
+        if(blocks[i][j].getNumber()===-1){
           count++;
         }
       }
@@ -178,6 +157,105 @@ class Game extends React.Component{
     return count;
   }
 
+  leftClick(rowIndex, columnIndex){
+    var block = this.state.blocks[rowIndex][columnIndex];
+    switch(block.getNumber()){
+      case 0:
+        block.setBtnState(this.getBlockStateByNumber(block.getNumber()));
+        this.setState({ blocks : this.state.blocks });
+        break;
+      case -1:
+        this.lose();
+        break;
+      default:
+        block.setBtnState(this.getBlockStateByNumber(block.getNumber()));
+        this.setState({ blocks : this.state.blocks });
+        break;
+    }
+  }
+
+  rightClick(rowIndex, columnIndex){
+
+  }
+
+  getBlockStateByNumber(number){
+    switch(number){
+      case 0:
+        return this.BlockStateEnum.EMPTY;
+        break;
+      case 1:
+        return this.BlockStateEnum.ONE;
+        break;
+      case 2:
+        return this.BlockStateEnum.TWO;
+        break;
+      case 3:
+        return this.BlockStateEnum.THREE;
+        break;
+      case 4:
+        return this.BlockStateEnum.FOUR;
+        break;
+      case 5:
+        return this.BlockStateEnum.FIVE;
+        break;
+      case 6:
+        return this.BlockStateEnum.SIX;
+        break;
+      case 7:
+        return this.BlockStateEnum.SEVEN;
+        break;
+      case 8:
+        return this.BlockStateEnum.EIGHT;
+        break;
+      
+    }
+  }
+
+  lose(){
+    alert("패배했습니다.");
+    switch(this.state.level){
+      case 1:
+        this.setState({ 
+          leftFlagCount : this.CountMineEnum.LV1,
+          leftBlockCount : this.GameBoardWidthEnum.LV1 * this.GameBoardHeightEnum.LV1 - this.CountMineEnum.LV1
+         });
+        break;
+      case 2:
+        this.setState({ 
+          leftFlagCount : this.CountMineEnum.LV2,
+          leftBlockCount : this.GameBoardWidthEnum.LV2 * this.GameBoardHeightEnum.LV2 - this.CountMineEnum.LV2
+         });
+        break;
+      case 3:
+        this.setState({ 
+          leftFlagCount : this.CountMineEnum.LV3,
+          leftBlockCount : this.GameBoardWidthEnum.LV3 * this.GameBoardHeightEnum.LV3 - this.CountMineEnum.LV3
+         });
+        break;
+    }
+    
+    this.setState({ blocks : this.getBlocks(this.state.level) });
+  }
+
+}
+
+class Block{
+  constructor(number, btnState){
+    this.number = number;
+    this.btnState = btnState;
+
+    this.getBtnState = this.getBtnState.bind(this);
+    this.setBtnState = this.setBtnState.bind(this);
+
+    this.getNumber = this.getNumber.bind(this);
+    this.setNumber = this.setNumber.bind(this);
+  }
+
+  getBtnState(){ return this.btnState; }
+  setBtnState(newBtnState){ this.btnState = newBtnState; }
+
+  getNumber(){ return this.number; }
+  setNumber(newNumber){ this.number = newNumber; }
 }
 
 class Header extends React.Component{
@@ -189,8 +267,8 @@ class Header extends React.Component{
 
   render(){
     return <div id="header">
-      <SelectLevel ChangeLevel={this.props.ChangeLevel} />
-        <img src="resource/images/flag_icon.png" />{this.props.left_flag}
+      <SelectLevel changeLevel={this.props.changeLevel} />
+        <img src="resource/images/flag_icon.png" />{this.props.leftFlagCount}
         <img src="resource/images/clock_icon.png" />
     </div>
   }
@@ -204,7 +282,7 @@ class SelectLevel extends React.Component{
   }
 
   render(){
-    return <select id="selectLevel" onChange={this.props.ChangeLevel}>
+    return <select id="selectLevel" onChange={this.props.changeLevel}>
       <option value="1">초급</option>
       <option value="2">중급</option>
       <option value="3">상급</option>
@@ -220,26 +298,21 @@ class GameBoard extends React.Component{
   }
 
   render(){
-    var id = 1;
     return (
       <div id="gameBoard">
         {
           this.props.blocks.map(
-            (row) => (
+            (row, rowIndex) => (
               <div>
                 {
                   row.map(
-                    (value) => (
-                      <Block 
-                        id={id++}
-                        isRestart={this.props.isRestart} 
-                        left_flag={this.props.left_flag}
-                        number={value} 
-                        Lose={this.props.Lose} 
-                        Restart={this.props.Restart}
-                        DescBlock={this.props.DescBlock}
-                        IncFlagCount={this.props.IncFlagCount}
-                        DescFlagCount={this.props.DescFlagCount} />
+                    (value, columnIndex) => (
+                      <button
+                          className = {"button " + value.getBtnState()} 
+                          onClick = {() => this.props.leftClick(rowIndex, columnIndex)}
+                          onContextMenu = {() => this.props.rightClick(rowIndex, columnIndex) }>
+                        {value.getNumber()+":"+rowIndex+","+columnIndex}
+                      </button>
                     )
                   )
                 }
@@ -256,104 +329,6 @@ class GameBoard extends React.Component{
       this.props.Restart();
     }
   }
-}
-
-class Block extends React.Component{
-  constructor(props){
-    super(props);
-    this.state = {
-      isClick : false,
-      isFlag : false
-    };
-
-    this.RightClick = this.RightClick.bind(this);
-  }
-
-  render(){
-    return  <button
-                value = {this.props.number}
-                className = {"button "+this.WhatClass(this.state.isClick, this.state.isFlag, this.props.number)} 
-                onClick = {() => this.PressBlock(this.state.isFlag, this.state.isClick, this.props.number)}
-                onContextMenu = {this.RightClick}>
-              {this.props.number}
-            </button>
-  }
-
-  componentDidUpdate(preProps){
-    if(!this.props.isRestart && preProps.isRestart){
-      this.setState({
-        isClick : false,
-        isFlag : false
-      });
-    }
-  }
-
-  WhatClass(isClick, isFlag, number){
-    if(isFlag){
-      return "flag";
-    }
-    else if(!isClick){
-      return "default";
-    }
-    else if(number===0){
-      return "zero";
-    }
-    else if(number===1){
-      return "one";
-    }
-    else if(number===2){
-      return "two";
-    }
-    else if(number===3){
-      return "three";
-    }
-    else if(number===4){
-      return "four";
-    }
-    else if(number===5){
-      return "five";
-    }
-    else if(number===6){
-      return "six";
-    }
-    else if(number===7){
-      return "seven";
-    }
-    else if(number===8){
-      return "eight";
-    }
-  }
-
-  PressBlock(isFlag, isClick, number){
-    if(isFlag || isClick){
-      return;
-    }
-    else if(number === -1){
-      this.props.Lose();
-      return;
-    }
-    else{
-      this.setState({isClick : true});
-      this.props.DescBlock();
-      console.log(number);
-      return;
-    }
-  }
-
-  RightClick(e){
-    e.preventDefault();
-
-    if(this.props.left_flag > 0 && !this.state.isFlag){
-      this.setState({isFlag : true});
-      this.props.DescFlagCount();
-    }
-    else if(this.state.isFlag){
-      this.setState({isFlag : false});
-      this.props.IncFlagCount();
-    }
-    
-  }
-
 }
 
 ReactDOM.render(
