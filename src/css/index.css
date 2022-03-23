@@ -1,0 +1,116 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+#game{
+  margin:auto;
+  margin-top:20px;
+}
+
+#header{
+  background-color: #4a752c;
+  color: white;
+  padding: 20px;
+}
+
+#selectLevel{
+  border-radius: 5px;
+  width: 60px;
+  height: 30px;
+  font-size: 15px;
+}
+
+#info{
+  margin:auto;
+}
+
+.icon{
+  width:30px;
+  margin-bottom: -10px;
+}
+
+.row{
+  margin-bottom: -3px;
+}
+
+.button{
+  width:40px;
+  height:40px;
+  border:none;
+}
+
+.default1{
+  background-image: url("/public/resource/images/default1.png");
+  background-size : 100%;
+}
+
+.default2{
+  background-image: url("/public/resource/images/default2.png");
+  background-size : 100%;
+}
+
+.flag{
+  background-image: url("/public/resource/images/flag.png");
+  background-size : 100%;
+}
+
+.zero1{
+  background-image: url("/public/resource/images/zero1.png");
+  background-size : 100%;
+}
+
+.zero2{
+  background-image: url("/public/resource/images/zero2.png");
+  background-size : 100%;
+}
+
+.one{
+  background-image: url("/public/resource/images/one.png");
+  background-size : 100%;
+}
+
+.two{
+  background-image: url("/public/resource/images/two.png");
+  background-size : 100%;
+}
+
+.three{
+  background-image: url("/public/resource/images/three.png");
+  background-size : 100%;
+}
+
+.four{
+  background-image: url("/public/resource/images/four.png");
+  background-size : 100%;
+}
+
+.five{
+  background-image: url("/public/resource/images/five.png");
+  background-size : 100%;
+}
+
+.six{
+  background-image: url("/public/resource/images/six.png");
+  background-size : 100%;
+}
+
+.seven{
+  background-image: url("/public/resource/images/seven.png");
+  background-size : 100%;
+}
+
+.eight{
+  background-image: url("/public/resource/images/eight.png");
+  background-size : 100%;
+}
+
